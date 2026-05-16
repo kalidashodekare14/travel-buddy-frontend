@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import AuthWrapper from '@/components/shared/AuthWrapper'
 
 const item = {
@@ -11,12 +13,53 @@ const item = {
 }
 
 export default function RegisterPage() {
+  const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/auth/register`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password }),
+        },
+      )
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.message || 'Registration failed. Please try again.')
+        setLoading(false)
+        return
+      }
+
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        setError('Account created but sign in failed. Please log in.')
+        setLoading(false)
+        return
+      }
+
+      router.push('/')
+      router.refresh()
+    } catch {
+      setError('Something went wrong. Please try again.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -39,6 +82,16 @@ export default function RegisterPage() {
         onSubmit={handleSubmit}
         className="space-y-5"
       >
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400"
+          >
+            {error}
+          </motion.div>
+        )}
+
         <motion.div variants={item}>
           <label htmlFor="name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Full name
@@ -87,9 +140,10 @@ export default function RegisterPage() {
         <motion.div variants={item}>
           <button
             type="submit"
-            className="w-full rounded-xl bg-emerald-500 px-4 py-2.5 text-base font-semibold text-white shadow-sm transition-all hover:bg-emerald-600 hover:shadow-md"
+            disabled={loading}
+            className="w-full rounded-xl bg-emerald-500 px-4 py-2.5 text-base font-semibold text-white shadow-sm transition-all hover:bg-emerald-600 hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Create account
+            {loading ? 'Creating account...' : 'Create account'}
           </button>
         </motion.div>
 

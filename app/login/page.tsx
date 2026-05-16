@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import AuthWrapper from '@/components/shared/AuthWrapper'
 
 const item = {
@@ -11,11 +13,32 @@ const item = {
 }
 
 export default function LoginPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    })
+
+    setLoading(false)
+
+    if (result?.error) {
+      setError('Invalid email or password. Please try again.')
+      return
+    }
+
+    router.push('/')
+    router.refresh()
   }
 
   return (
@@ -38,6 +61,16 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         className="space-y-5"
       >
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400"
+          >
+            {error}
+          </motion.div>
+        )}
+
         <motion.div variants={item}>
           <label htmlFor="email" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Email
@@ -84,9 +117,10 @@ export default function LoginPage() {
         <motion.div variants={item}>
           <button
             type="submit"
-            className="w-full rounded-xl bg-emerald-500 px-4 py-2.5 text-base font-semibold text-white shadow-sm transition-all hover:bg-emerald-600 hover:shadow-md"
+            disabled={loading}
+            className="w-full rounded-xl bg-emerald-500 px-4 py-2.5 text-base font-semibold text-white shadow-sm transition-all hover:bg-emerald-600 hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Sign in
+            {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </motion.div>
 
