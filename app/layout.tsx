@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SessionProvider from "@/components/shared/SessionProvider";
+import ReduxProvider from "@/components/shared/ReduxProvider";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -27,11 +28,13 @@ export default function RootLayout({
       className={`${poppins.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <SessionProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </SessionProvider>
+        <ReduxProvider>
+          <SessionProvider>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </SessionProvider>
+        </ReduxProvider>
       </body>
     </html>
   );

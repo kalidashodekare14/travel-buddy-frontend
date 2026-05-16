@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
+import { useRegisterMutation } from '@/lib/api'
 import AuthWrapper from '@/components/shared/AuthWrapper'
 
 const item = {
@@ -18,29 +19,14 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [register, { isLoading }] = useRegisterMutation()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    setLoading(true)
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/auth/register`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password }),
-        },
-      )
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        setError(data.message || 'Registration failed. Please try again.')
-        setLoading(false)
-        return
-      }
+      await register({ name, email, password }).unwrap()
 
       const result = await signIn('credentials', {
         email,
@@ -50,15 +36,14 @@ export default function RegisterPage() {
 
       if (result?.error) {
         setError('Account created but sign in failed. Please log in.')
-        setLoading(false)
         return
       }
 
       router.push('/')
       router.refresh()
-    } catch {
-      setError('Something went wrong. Please try again.')
-      setLoading(false)
+    } catch (err: unknown) {
+      const data = err as { data?: { message?: string }; status?: number }
+      setError(data?.data?.message || 'Registration failed. Please try again.')
     }
   }
 
@@ -140,10 +125,10 @@ export default function RegisterPage() {
         <motion.div variants={item}>
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className="w-full rounded-xl bg-emerald-500 px-4 py-2.5 text-base font-semibold text-white shadow-sm transition-all hover:bg-emerald-600 hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? 'Creating account...' : 'Create account'}
+            {isLoading ? 'Creating account...' : 'Create account'}
           </button>
         </motion.div>
 
