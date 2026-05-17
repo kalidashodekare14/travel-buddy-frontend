@@ -4,6 +4,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SessionProvider from "@/components/shared/SessionProvider";
 import ReduxProvider from "@/components/shared/ReduxProvider";
+import SessionWatcher from "@/components/shared/SessionWatcher";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ReduxProvider>
           <SessionProvider>
+            <SessionWatcher />
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer />

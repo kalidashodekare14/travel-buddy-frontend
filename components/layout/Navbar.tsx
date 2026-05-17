@@ -4,11 +4,11 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 
-const navLinks = [
+const allLinks = [
   { label: 'Home', href: '/' },
   { label: 'Explore', href: '/feed' },
-  { label: 'Create Post', href: '/create-post' },
-  { label: 'Chat', href: '/chat' },
+  { label: 'Create Post', href: '/create-post', authRequired: true },
+  { label: 'Chat', href: '/chat', authRequired: true },
 ]
 
 export default function Navbar() {
@@ -17,6 +17,7 @@ export default function Navbar() {
   const { data: session, status } = useSession()
   const isAuth = status === 'authenticated'
   const user = session?.user
+  const navLinks = allLinks.filter((l) => !l.authRequired || isAuth)
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-black/80">

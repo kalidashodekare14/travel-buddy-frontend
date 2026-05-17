@@ -4,8 +4,10 @@ import Credentials from "next-auth/providers/credentials"
 declare module "next-auth" {
   interface User {
     avatar?: string | null
+    accessToken?: string
   }
   interface Session {
+    accessToken?: string
     user: {
       id: string
       name: string
@@ -19,6 +21,7 @@ declare module "@auth/core/jwt" {
   interface JWT {
     id: string
     avatar?: string | null
+    accessToken?: string
   }
 }
 
@@ -41,12 +44,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!res.ok) return null
 
-        const user = await res.json()
+        const data = await res.json()
         return {
-          id: user.id ?? user._id,
-          name: user.name,
-          email: user.email,
-          avatar: user.avatar ?? null,
+          id: data.user?.id ?? data.id ?? data._id,
+          name: data.user?.name ?? data.name,
+          email: data.user?.email ?? data.email,
+          avatar: data.user?.avatar ?? data.avatar ?? null,
+          accessToken: data.token ?? data.accessToken,
         }
       },
     }),
@@ -56,12 +60,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id!
         token.avatar = user.avatar
+        token.accessToken = user.accessToken
       }
       return token
     },
     async session({ session, token }) {
       session.user.id = token.id
       session.user.avatar = token.avatar ?? null
+      session.accessToken = token.accessToken
       return session
     },
   },
