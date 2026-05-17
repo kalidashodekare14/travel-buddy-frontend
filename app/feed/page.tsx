@@ -2,60 +2,10 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { useGetPostsQuery } from '@/lib/api'
 import FeedPost from '@/components/shared/FeedPost'
 
 const filters = ['All', 'Trending', 'Recent', 'Near Me']
-
-const posts = [
-  {
-    user: { name: 'Amina Patel', avatar: 'AP', location: 'Mumbai, India' },
-    image: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?q=80&w=800&h=600&fit=crop',
-    caption: 'Sunset hike in the Himalayas was absolutely breathtaking! Found amazing trekking partners here.',
-    tags: ['hiking', 'himalayas', 'adventure'],
-    likes: 142,
-    comments: 18,
-  },
-  {
-    user: { name: 'Lucas Weber', avatar: 'LW', location: 'Berlin, Germany' },
-    image: 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=800&h=600&fit=crop',
-    caption: 'Venice canals at golden hour. TravelBuddy made this spontaneous trip possible!',
-    tags: ['venice', 'italy', 'solo-travel'],
-    likes: 98,
-    comments: 12,
-  },
-  {
-    user: { name: 'Yuki Tanaka', avatar: 'YT', location: 'Tokyo, Japan' },
-    image: 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?q=80&w=800&h=600&fit=crop',
-    caption: 'Exploring the temples of Kyoto with my new travel crew. Match made in heaven!',
-    tags: ['japan', 'kyoto', 'culture'],
-    likes: 215,
-    comments: 27,
-  },
-  {
-    user: { name: 'Sophia Martinez', avatar: 'SM', location: 'Barcelona, Spain' },
-    image: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=800&h=600&fit=crop',
-    caption: 'Road trip along the Amalfi Coast with friends from the app. Unforgettable!',
-    tags: ['roadtrip', 'italy', 'coast'],
-    likes: 176,
-    comments: 21,
-  },
-  {
-    user: { name: 'James Okafor', avatar: 'JO', location: 'Lagos, Nigeria' },
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=800&h=600&fit=crop',
-    caption: 'Beach vibes in Thailand! Met some incredible people who are now lifelong friends.',
-    tags: ['thailand', 'beach', 'travel-family'],
-    likes: 310,
-    comments: 42,
-  },
-  {
-    user: { name: 'Elena Voss', avatar: 'EV', location: 'Amsterdam, Netherlands' },
-    image: 'https://images.unsplash.com/photo-1495562569060-2eec283d3391?q=80&w=800&h=600&fit=crop',
-    caption: 'Northern Lights in Tromsø — a bucket list experience shared with the best travel buddies.',
-    tags: ['norway', 'northern-lights', 'bucket-list'],
-    likes: 489,
-    comments: 53,
-  },
-]
 
 const container = {
   hidden: {},
@@ -73,11 +23,17 @@ export default function FeedPage() {
   const [activeFilter, setActiveFilter] = useState('All')
   const [search, setSearch] = useState('')
 
-  const filtered = posts.filter((post) => {
+  const { data: posts, isLoading, isError, error } = useGetPostsQuery()
+
+  const filtered = (posts || []).filter((post) => {
+    const q = search.toLowerCase()
     const matchesSearch =
-      post.caption.toLowerCase().includes(search.toLowerCase()) ||
-      post.user.name.toLowerCase().includes(search.toLowerCase()) ||
-      post.tags.some((t) => t.includes(search.toLowerCase()))
+      !q ||
+      post.title.toLowerCase().includes(q) ||
+      post.destination.toLowerCase().includes(q) ||
+      post.description.toLowerCase().includes(q) ||
+      post.user.name.toLowerCase().includes(q) ||
+      post.tags.some((t) => t.includes(q))
     const matchesFilter = activeFilter === 'All' || true
     return matchesSearch && matchesFilter
   })
@@ -145,7 +101,27 @@ export default function FeedPage() {
           </motion.div>
         </div>
 
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="mt-20 flex justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
+          </div>
+        ) : isError ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-20 text-center"
+          >
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-900/50">
+              <svg className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+            </div>
+            <h3 className="mt-4 text-base font-semibold text-zinc-900 dark:text-white">Failed to load posts</h3>
+            <p className="mt-1 text-base text-zinc-500">
+              {(error as { data?: { message?: string } })?.data?.message || 'Something went wrong. Please try again.'}
+            </p>
+          </motion.div>
+        ) : filtered.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -166,8 +142,8 @@ export default function FeedPage() {
             animate="show"
             className="mt-6 space-y-6"
           >
-            {filtered.map((post) => (
-              <motion.div key={post.caption} variants={item}>
+            {filtered.map((post, i) => (
+              <motion.div key={post.id || i} variants={item}>
                 <FeedPost {...post} />
               </motion.div>
             ))}

@@ -109,6 +109,36 @@ export const api = createApi({
     getPosts: builder.query<Post[], void>({
       query: () => "/api/posts",
       providesTags: ["Posts"],
+      transformResponse: (res: unknown) => {
+        const raw: unknown[] =
+          Array.isArray(res)
+            ? res
+            : (res as { posts?: unknown[] })?.posts || (res as { data?: unknown[] })?.data || []
+        return raw.map((p) => {
+          const post = (p || {}) as Record<string, unknown>
+          return {
+            id: (post.id as string) || '',
+            title: (post.title as string) || '',
+            destination: (post.destination as string) || '',
+            travelDate: (post.travelDate as string) || '',
+            budget: (post.budget as number) || 0,
+            description: (post.description as string) || '',
+            peopleNeeded: (post.peopleNeeded as number) || 0,
+            createdBy: (post.createdBy as string) || '',
+            user: {
+              id: ((post.user as Record<string, unknown>)?.id as string) || '',
+              name: ((post.user as Record<string, unknown>)?.name as string) || '',
+              avatar: ((post.user as Record<string, unknown>)?.avatar as string) || '',
+              location: ((post.user as Record<string, unknown>)?.location as string) || '',
+            },
+            image: (post.image as string) || '',
+            tags: Array.isArray(post.tags) ? (post.tags as string[]) : [],
+            likes: (post.likes as number) || 0,
+            comments: (post.comments as number) || 0,
+            createdAt: (post.createdAt as string) || '',
+          } as Post
+        })
+      },
     }),
 
     createPost: builder.mutation<CreatePostResponse, FormData>({
