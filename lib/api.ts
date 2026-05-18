@@ -65,6 +65,42 @@ interface CreatePostResponse {
   message: string
 }
 
+interface UpdatePostRequest {
+  title?: string
+  destination?: string
+  travelDate?: string
+  budget?: number
+  description?: string
+  peopleNeeded?: number
+  tags?: string[]
+}
+
+interface RespondRequestParams {
+  id: string
+  status: "accepted" | "rejected"
+}
+
+export interface JoinRequest {
+  _id: string
+  postId: string
+  userId: {
+    _id: string
+    name: string
+    avatar: string
+  }
+  status: "pending" | "accepted" | "rejected"
+  createdAt: string
+  post: {
+    _id: string
+    title: string
+    destination: string
+    travelDate: string
+    image: string
+    budget: number
+    peopleNeeded: number
+  }
+}
+
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
@@ -77,7 +113,7 @@ export const api = createApi({
       return headers
     },
   }),
-  tagTypes: ["Profile", "Posts"],
+  tagTypes: ["Profile", "Posts", "Requests"],
   endpoints: (builder) => ({
     register: builder.mutation<RegisterResponse, RegisterRequest>({
       query: (body) => ({
@@ -162,6 +198,85 @@ export const api = createApi({
       }),
       invalidatesTags: ["Posts"],
     }),
+
+    getMyRequests: builder.query<JoinRequest[], void>({
+      query: () => "/api/join/my-requests",
+      providesTags: ["Requests"],
+    }),
+
+    respondToRequest: builder.mutation<{ message: string }, RespondRequestParams>({
+      query: ({ id, status }) => ({
+        url: `/api/join/${id}`,
+        method: "PUT",
+        body: { status },
+      }),
+      invalidatesTags: ["Requests", "Posts"],
+    }),
+
+    cancelRequest: builder.mutation<{ message: string }, string>({
+      query: (id) => ({
+        url: `/api/join/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Requests"],
+    }),
+
+    getMyPosts: builder.query<Post[], void>({
+      query: () => "/api/posts/my-trips",
+      providesTags: ["Posts"],
+      transformResponse: (res: unknown) => {
+        const raw: unknown[] =
+          Array.isArray(res)
+            ? res
+            : (res as { posts?: unknown[] })?.posts || (res as { data?: unknown[] })?.data || []
+        return raw.map((p) => {
+          const post = (p || {}) as Record<string, unknown>
+          return {
+            id: (post._id as string) || '',
+            title: (post.title as string) || '',
+            destination: (post.destination as string) || '',
+            travelDate: (post.travelDate as string) || '',
+            budget: (post.budget as number) || 0,
+            description: (post.description as string) || '',
+            peopleNeeded: (post.peopleNeeded as number) || 0,
+            createdBy: (post.createdBy as string) || '',
+            user: {
+              id: ((post.user as Record<string, unknown>)?.id as string) || '',
+              name: ((post.user as Record<string, unknown>)?.name as string) || '',
+              avatar: ((post.user as Record<string, unknown>)?.avatar as string) || '',
+              location: ((post.user as Record<string, unknown>)?.location as string) || '',
+            },
+            image: (post.image as string) || '',
+            tags: Array.isArray(post.tags) ? (post.tags as string[]) : [],
+            likes: (post.likes as number) || 0,
+            comments: (post.comments as number) || 0,
+            createdAt: (post.createdAt as string) || '',
+          } as Post
+        })
+      },
+    }),
+
+    updatePost: builder.mutation<CreatePostResponse, { id: string; body: FormData | UpdatePostRequest }>({
+      query: ({ id, body }) => ({
+        url: `/api/posts/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Posts"],
+    }),
+
+    deletePost: builder.mutation<{ message: string }, string>({
+      query: (id) => ({
+        url: `/api/posts/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Posts"],
+    }),
+
+    getPostRequests: builder.query<JoinRequest[], string>({
+      query: (postId) => `/api/posts/${postId}/requests`,
+      providesTags: ["Requests"],
+    }),
   }),
 })
 
@@ -173,4 +288,11 @@ export const {
   useGetPostsQuery,
   useCreatePostMutation,
   useJoinTripMutation,
+  useGetMyRequestsQuery,
+  useCancelRequestMutation,
+  useRespondToRequestMutation,
+  useGetMyPostsQuery,
+  useUpdatePostMutation,
+  useDeletePostMutation,
+  useGetPostRequestsQuery,
 } = api

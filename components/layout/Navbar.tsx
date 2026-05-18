@@ -11,6 +11,7 @@ const allLinks = [
   { label: 'Contact', href: '/contact' },
   { label: 'Create Post', href: '/create-post', authRequired: true },
   { label: 'Chat', href: '/chat', authRequired: true },
+  { label: 'My Requests', href: '/my-requests', authRequired: true },
 ]
 
 export default function Navbar() {
@@ -68,6 +69,13 @@ export default function Navbar() {
                     className="block px-4 py-2.5 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   >
                     Profile
+                  </Link>
+                  <Link
+                    href="/my-requests"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-2.5 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  >
+                    My Requests
                   </Link>
                   <Link
                     href="/my-trips"
