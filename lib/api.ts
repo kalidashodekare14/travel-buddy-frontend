@@ -56,6 +56,10 @@ export interface Post {
   createdAt: string
 }
 
+interface JoinTripRequest {
+  postId: string
+}
+
 interface CreatePostResponse {
   post: Post
   message: string
@@ -117,7 +121,7 @@ export const api = createApi({
         return raw.map((p) => {
           const post = (p || {}) as Record<string, unknown>
           return {
-            id: (post.id as string) || '',
+            id: (post._id as string) || '',
             title: (post.title as string) || '',
             destination: (post.destination as string) || '',
             travelDate: (post.travelDate as string) || '',
@@ -141,6 +145,15 @@ export const api = createApi({
       },
     }),
 
+    joinTrip: builder.mutation<{ message: string }, JoinTripRequest>({
+      query: (body) => ({
+        url: "/api/join",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Posts"],
+    }),
+
     createPost: builder.mutation<CreatePostResponse, FormData>({
       query: (formData) => ({
         url: "/api/posts",
@@ -159,4 +172,5 @@ export const {
   useUploadAvatarMutation,
   useGetPostsQuery,
   useCreatePostMutation,
+  useJoinTripMutation,
 } = api

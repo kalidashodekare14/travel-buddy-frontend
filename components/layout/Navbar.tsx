@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { useSession, signOut } from 'next-auth/react'
+import { useState } from 'react'
 
 const allLinks = [
   { label: 'Home', href: '/' },
@@ -20,6 +20,8 @@ export default function Navbar() {
   const isAuth = status === 'authenticated'
   const user = session?.user
   const navLinks = allLinks.filter((l) => !l.authRequired || isAuth)
+
+  // console.log(session)
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-black/80">

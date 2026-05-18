@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { useGetPostsQuery } from '@/lib/api'
 import FeedPost from '@/components/shared/FeedPost'
+import { useGetPostsQuery, useJoinTripMutation } from '@/lib/api'
+import { motion } from 'framer-motion'
+import { useSession } from 'next-auth/react'
+import { useState } from 'react'
 
 const filters = ['All', 'Trending', 'Recent', 'Near Me']
 
@@ -22,8 +23,25 @@ const item = {
 export default function FeedPage() {
   const [activeFilter, setActiveFilter] = useState('All')
   const [search, setSearch] = useState('')
+  const [joiningId, setJoiningId] = useState<string | null>(null)
 
+  const { data: session } = useSession()
   const { data: posts, isLoading, isError, error } = useGetPostsQuery()
+  const [joinTrip] = useJoinTripMutation()
+
+
+  const handleJoin = async (postId: string) => {
+    if (!session?.user?.id) return
+    setJoiningId(postId)
+    try {
+      await joinTrip({ postId }).unwrap()
+    } catch(error) {
+      console.log(error);
+      // handled by RTK Query error state
+    } finally {
+      setJoiningId(null)
+    }
+  }
 
   const filtered = (posts || []).filter((post) => {
     const q = search.toLowerCase()
@@ -144,7 +162,7 @@ export default function FeedPage() {
           >
             {filtered.map((post, i) => (
               <motion.div key={post.id || i} variants={item}>
-                <FeedPost {...post} />
+                <FeedPost {...post} postId={post.id} onJoin={handleJoin} joining={joiningId === post.id} />
               </motion.div>
             ))}
           </motion.div>

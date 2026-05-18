@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 
 interface FeedPostProps {
+  postId: string
   user: { name: string; avatar: string; location: string }
   title: string
   destination: string
@@ -15,9 +16,12 @@ interface FeedPostProps {
   tags: string[]
   likes: number
   comments: number
+  onJoin?: (postId: string) => void
+  joining?: boolean
 }
 
 export default function FeedPost({
+  postId,
   user,
   title,
   destination,
@@ -29,6 +33,8 @@ export default function FeedPost({
   tags,
   likes,
   comments,
+  onJoin,
+  joining,
 }: FeedPostProps) {
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(likes)
@@ -96,6 +102,14 @@ export default function FeedPost({
             </span>
           ))}
         </div>
+
+        <button
+          onClick={() => onJoin?.(postId)}
+          disabled={joining}
+          className="w-full rounded-lg bg-emerald-500 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {joining ? 'Joining...' : 'Join Trip'}
+        </button>
 
         <div className="flex items-center gap-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
           <button
