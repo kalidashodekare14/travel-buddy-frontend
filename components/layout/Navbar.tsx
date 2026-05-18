@@ -7,6 +7,8 @@ import { useSession, signOut } from 'next-auth/react'
 const allLinks = [
   { label: 'Home', href: '/' },
   { label: 'Explore', href: '/feed' },
+  { label: 'About', href: '/about' },
+  { label: 'Contact', href: '/contact' },
   { label: 'Create Post', href: '/create-post', authRequired: true },
   { label: 'Chat', href: '/chat', authRequired: true },
 ]

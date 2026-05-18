@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useForm, SubmitHandler } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -12,28 +12,36 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' as const } },
 }
 
+const inputClass =
+  'mt-1.5 block w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-base text-zinc-900 placeholder-zinc-400 transition-colors focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 dark:focus:border-emerald-500 dark:focus:ring-emerald-900'
+
+const invalidInputClass =
+  'mt-1.5 block w-full rounded-xl border border-red-300 bg-white px-4 py-2.5 text-base text-zinc-900 placeholder-zinc-400 transition-colors focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-100 dark:border-red-800 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 dark:focus:border-red-500 dark:focus:ring-red-900'
+
+type Inputs = {
+  email: string
+  password: string
+}
+
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<Inputs>()
 
+  const onSubmit: SubmitHandler<Inputs> = async (data) => {
     const result = await signIn('credentials', {
-      email,
-      password,
+      email: data.email,
+      password: data.password,
       redirect: false,
     })
 
-    setLoading(false)
-
     if (result?.error) {
-      setError('Invalid email or password. Please try again.')
+      setError('root', { message: 'Invalid email or password. Please try again.' })
       return
     }
 
@@ -58,16 +66,16 @@ export default function LoginPage() {
         variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08 } } }}
         initial="hidden"
         animate="show"
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
         className="space-y-5"
       >
-        {error && (
+        {errors.root && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400"
           >
-            {error}
+            {errors.root.message}
           </motion.div>
         )}
 
@@ -78,12 +86,11 @@ export default function LoginPage() {
           <input
             id="email"
             type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="mt-1.5 block w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-base text-zinc-900 placeholder-zinc-400 transition-colors focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 dark:focus:border-emerald-500 dark:focus:ring-emerald-900"
+            className={errors.email ? invalidInputClass : inputClass}
+            {...register('email', { required: true })}
           />
+          {errors.email && <span className="mt-1 text-xs text-red-500">This field is required</span>}
         </motion.div>
 
         <motion.div variants={item}>
@@ -93,12 +100,11 @@ export default function LoginPage() {
           <input
             id="password"
             type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="mt-1.5 block w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-base text-zinc-900 placeholder-zinc-400 transition-colors focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 dark:focus:border-emerald-500 dark:focus:ring-emerald-900"
+            className={errors.password ? invalidInputClass : inputClass}
+            {...register('password', { required: true })}
           />
+          {errors.password && <span className="mt-1 text-xs text-red-500">This field is required</span>}
         </motion.div>
 
         <motion.div variants={item} className="flex items-center justify-between">
@@ -117,10 +123,17 @@ export default function LoginPage() {
         <motion.div variants={item}>
           <button
             type="submit"
-            disabled={loading}
+            disabled={isSubmitting}
             className="w-full rounded-xl bg-emerald-500 px-4 py-2.5 text-base font-semibold text-white shadow-sm transition-all hover:bg-emerald-600 hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Signing in...
+              </span>
+            ) : (
+              'Sign in'
+            )}
           </button>
         </motion.div>
 
@@ -136,6 +149,7 @@ export default function LoginPage() {
         <motion.div variants={item} className="grid grid-cols-2 gap-3">
           <button
             type="button"
+            onClick={() => signIn('google', { callbackUrl: '/' })}
             className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -148,7 +162,8 @@ export default function LoginPage() {
           </button>
           <button
             type="button"
-            className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            disabled
+            className="flex cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-400 transition-colors dark:border-zinc-700 dark:text-zinc-600"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
