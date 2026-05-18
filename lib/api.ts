@@ -82,23 +82,20 @@ interface RespondRequestParams {
 
 export interface JoinRequest {
   _id: string
-  postId: string
-  userId: {
-    _id: string
-    name: string
-    avatar: string
-  }
-  status: "pending" | "accepted" | "rejected"
-  createdAt: string
   post: {
     _id: string
     title: string
     destination: string
-    travelDate: string
     image: string
-    budget: number
-    peopleNeeded: number
   }
+  sender: {
+    _id: string
+    name: string
+    avatar: string
+  }
+  receiver?: string
+  status: "pending" | "accepted" | "rejected"
+  createdAt: string
 }
 
 export const api = createApi({
@@ -204,6 +201,11 @@ export const api = createApi({
       providesTags: ["Requests"],
     }),
 
+    getReceivedRequests: builder.query<JoinRequest[], void>({
+      query: () => "/api/join/received-requests",
+      providesTags: ["Requests"],
+    }),
+
     respondToRequest: builder.mutation<{ message: string }, RespondRequestParams>({
       query: ({ id, status }) => ({
         url: `/api/join/${id}`,
@@ -273,9 +275,37 @@ export const api = createApi({
       invalidatesTags: ["Posts"],
     }),
 
-    getPostRequests: builder.query<JoinRequest[], string>({
-      query: (postId) => `/api/posts/${postId}/requests`,
+    getPostRequests: builder.query<JoinRequest[], void>({
+      query: () => `/api/join/received-requests`,
       providesTags: ["Requests"],
+      transformResponse: (res: unknown) => {
+        const raw: unknown[] =
+          Array.isArray(res)
+            ? res
+            : (res as { requests?: unknown[] })?.requests || (res as { data?: unknown[] })?.data || []
+        return raw.map((r) => {
+          const req = (r || {}) as Record<string, unknown>
+          const senderObj = (req.sender || req.userId || req.user || {}) as Record<string, unknown>
+          const postObj = (req.post || {}) as Record<string, unknown>
+          return {
+            _id: (req._id as string) || (req.id as string) || '',
+            post: {
+              _id: (postObj._id as string) || (postObj.id as string) || '',
+              title: (postObj.title as string) || '',
+              destination: (postObj.destination as string) || '',
+              image: (postObj.image as string) || '',
+            },
+            sender: {
+              _id: (senderObj._id as string) || (senderObj.id as string) || '',
+              name: (senderObj.name as string) || '',
+              avatar: (senderObj.avatar as string) || '',
+            },
+            receiver: (req.receiver as string) || '',
+            status: (req.status as JoinRequest['status']) || 'pending',
+            createdAt: (req.createdAt as string) || '',
+          } as JoinRequest
+        })
+      },
     }),
   }),
 })
@@ -289,6 +319,7 @@ export const {
   useCreatePostMutation,
   useJoinTripMutation,
   useGetMyRequestsQuery,
+  useGetReceivedRequestsQuery,
   useCancelRequestMutation,
   useRespondToRequestMutation,
   useGetMyPostsQuery,

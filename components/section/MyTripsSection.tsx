@@ -1,18 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useForm, SubmitHandler } from 'react-hook-form'
-import { skipToken } from '@reduxjs/toolkit/query/react'
 import {
-  useGetMyPostsQuery,
-  useUpdatePostMutation,
+  JoinRequest,
+  Post,
   useDeletePostMutation,
+  useGetMyPostsQuery,
   useGetPostRequestsQuery,
   useRespondToRequestMutation,
-  Post,
-  JoinRequest,
+  useUpdatePostMutation,
 } from '@/lib/api'
+import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { SubmitHandler, useForm } from 'react-hook-form'
 
 const container = {
   hidden: {},
@@ -367,8 +366,13 @@ function ParticipantsDrawer({
   open: boolean
   onClose: () => void
 }) {
-  const { data: requests, isLoading } = useGetPostRequestsQuery(open ? postId : skipToken)
   const [respondToRequest, { isLoading: isResponding }] = useRespondToRequestMutation()
+  const { data: allRequests, isLoading, refetch } = useGetPostRequestsQuery(undefined, {
+    skip: !open,
+  })
+  const requests = allRequests?.filter((r) => r.post?._id === postId)
+
+  console.log('chekcing datas', requests)
 
   if (!open) return null
 
@@ -411,21 +415,24 @@ function ParticipantsDrawer({
             </div>
           ) : (
             <div className="space-y-3">
-              {requests.map((req) => (
+              {requests.map((req: JoinRequest) => (
                 <div
                   key={req._id}
                   className="rounded-xl border border-zinc-100 p-4 dark:border-zinc-800"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-                      {req.userId?.name?.charAt(0)?.toUpperCase()}
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-100 bg-cover bg-center text-sm font-semibold text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"
+                      style={req.sender?.avatar ? { backgroundImage: `url(${req.sender.avatar.startsWith('http') ? req.sender.avatar : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}${req.sender.avatar}`})` } : undefined}
+                    >
+                      {!req.sender?.avatar && (req.sender?.name?.charAt(0)?.toUpperCase() || '?')}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="truncate text-sm font-semibold text-zinc-900 dark:text-white">
-                        {req.userId?.name}
+                        {req.sender?.name || 'Unknown'}
                       </p>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {new Date(req.createdAt).toLocaleDateString()}
+                        {req.createdAt ? new Date(req.createdAt).toLocaleDateString() : ''}
                       </p>
                     </div>
                     <StatusBadge status={req.status} />
@@ -434,14 +441,24 @@ function ParticipantsDrawer({
                   {req.status === 'pending' && (
                     <div className="mt-3 flex gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
                       <button
-                        onClick={() => respondToRequest({ id: req._id, status: 'accepted' })}
+                        onClick={async () => {
+                          try {
+                            await respondToRequest({ id: req._id, status: 'accepted' }).unwrap()
+                            refetch()
+                          } catch {}
+                        }}
                         disabled={isResponding}
                         className="flex-1 rounded-lg bg-emerald-500 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-600 disabled:opacity-60"
                       >
                         Accept
                       </button>
                       <button
-                        onClick={() => respondToRequest({ id: req._id, status: 'rejected' })}
+                        onClick={async () => {
+                          try {
+                            await respondToRequest({ id: req._id, status: 'rejected' }).unwrap()
+                            refetch()
+                          } catch {}
+                        }}
                         disabled={isResponding}
                         className="flex-1 rounded-lg border border-zinc-200 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-red-50 hover:text-red-600 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-red-950 dark:hover:text-red-400 disabled:opacity-60"
                       >

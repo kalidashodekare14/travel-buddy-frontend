@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import {
   JoinRequest,
-  useCancelRequestMutation,
   useGetMyRequestsQuery,
+  useCancelRequestMutation,
 } from '@/lib/api'
-import { motion } from 'framer-motion'
 
 const container = {
   hidden: {},
@@ -16,6 +16,59 @@ const container = {
 const item = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
+}
+
+function Shimmer({ className }: { className?: string }) {
+  return (
+    <div
+      className={`relative isolate overflow-hidden rounded-md bg-zinc-200 dark:bg-zinc-800 ${className ?? ''}`}
+    >
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/10" />
+    </div>
+  )
+}
+
+function SkeletonCard() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex flex-col sm:flex-row">
+        <div className="relative h-40 w-full shrink-0 overflow-hidden bg-zinc-200 dark:bg-zinc-800 sm:h-auto sm:w-48">
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/10" />
+        </div>
+        <div className="flex flex-1 flex-col gap-3 p-5">
+          <Shimmer className="h-5 w-48" />
+          <Shimmer className="h-4 w-32" />
+          <Shimmer className="h-6 w-20 rounded-full" />
+          <div className="flex flex-wrap gap-4">
+            <Shimmer className="h-4 w-28" />
+            <Shimmer className="h-4 w-20" />
+            <Shimmer className="h-4 w-24" />
+          </div>
+          <div className="flex items-center gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+            <Shimmer className="h-8 w-8 rounded-full" />
+            <Shimmer className="h-4 w-36" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SkeletonList() {
+  return (
+    <div className="space-y-4">
+      {[...Array(3)].map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.1, duration: 0.35 }}
+        >
+          <SkeletonCard />
+        </motion.div>
+      ))}
+    </div>
+  )
 }
 
 function StatusBadge({ status }: { status: JoinRequest['status'] }) {
@@ -58,70 +111,11 @@ function EmptyState() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
         </svg>
       </div>
-      <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
-        No requests yet
-      </h3>
+      <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">No requests yet</h3>
       <p className="mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
         When you request to join a trip, it will appear here.
       </p>
     </motion.div>
-  )
-}
-
-function Shimmer({ className }: { className?: string }) {
-  return (
-    <div
-      className={`relative isolate overflow-hidden rounded-md bg-zinc-200 dark:bg-zinc-800 ${className ?? ''}`}
-    >
-      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/10" />
-    </div>
-  )
-}
-
-function SkeletonCard() {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex flex-col sm:flex-row">
-        <div className="relative h-40 w-full shrink-0 overflow-hidden bg-zinc-200 dark:bg-zinc-800 sm:h-auto sm:w-48">
-          <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/10" />
-        </div>
-        <div className="flex flex-1 flex-col gap-3 p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 space-y-2">
-              <Shimmer className="h-5 w-48" />
-              <Shimmer className="h-4 w-32" />
-            </div>
-            <Shimmer className="h-6 w-20 rounded-full" />
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <Shimmer className="h-4 w-28" />
-            <Shimmer className="h-4 w-20" />
-            <Shimmer className="h-4 w-24" />
-          </div>
-          <div className="mt-1 flex items-center gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-            <Shimmer className="h-8 w-8 rounded-full" />
-            <Shimmer className="h-4 w-36" />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function SkeletonList() {
-  return (
-    <div className="space-y-4">
-      {[...Array(3)].map((_, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.1, duration: 0.35 }}
-        >
-          <SkeletonCard />
-        </motion.div>
-      ))}
-    </div>
   )
 }
 
@@ -220,26 +214,10 @@ function RequestCard({ req }: { req: JoinRequest }) {
                 {req.post?.destination || 'Unknown destination'}
               </p>
             </div>
-            <StatusBadge status={req.status} />
+            <StatusBadge status={cancelled ? 'rejected' : req.status} />
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-zinc-500 dark:text-zinc-400">
-            {req.post?.travelDate && (
-              <span className="flex items-center gap-1.5">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                </svg>
-                {new Date(req.post.travelDate).toLocaleDateString()}
-              </span>
-            )}
-            {req.post?.budget && (
-              <span className="flex items-center gap-1.5">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                ${req.post.budget}
-              </span>
-            )}
             <span className="flex items-center gap-1.5">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -249,14 +227,15 @@ function RequestCard({ req }: { req: JoinRequest }) {
           </div>
 
           <div className="mt-4 flex items-center gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-            <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-              {req.userId?.name?.charAt(0)?.toUpperCase()}
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-100 bg-cover bg-center text-sm font-semibold text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"
+              style={req.sender?.avatar ? { backgroundImage: `url(${req.sender.avatar.startsWith('http') ? req.sender.avatar : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}${req.sender.avatar}`})` } : undefined}
+            >
+              {!req.sender?.avatar && (req.sender?.name?.charAt(0)?.toUpperCase() || '?')}
             </div>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Requested by{' '}
-              <span className="font-semibold text-zinc-900 dark:text-white">
-                {req.userId?.name}
-              </span>
+              <span className="font-semibold text-zinc-900 dark:text-white">{req.sender?.name}</span>
             </p>
           </div>
 
@@ -309,15 +288,8 @@ function RequestCard({ req }: { req: JoinRequest }) {
 }
 
 export default function MyRequestsSection() {
-  const {
-    data: requests,
-    isLoading,
-    isError,
-    error,
-  } = useGetMyRequestsQuery()
-
-  const apiError =
-    (error as { data?: { message?: string } })?.data?.message
+  const { data: requests, isLoading, isError, error } = useGetMyRequestsQuery()
+  const apiError = (error as { data?: { message?: string } })?.data?.message
 
   return (
     <div className="min-h-screen bg-zinc-50 px-4 py-10 dark:bg-zinc-950 sm:py-14">
@@ -335,12 +307,8 @@ export default function MyRequestsSection() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                  My Requests
-                </h1>
-                <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
-                  Trips you have requested to join
-                </p>
+                <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">My Requests</h1>
+                <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">Trips you have requested to join</p>
               </div>
             </div>
           </div>
@@ -358,12 +326,7 @@ export default function MyRequestsSection() {
           {isLoading ? (
             <SkeletonList />
           ) : requests && requests.length > 0 ? (
-            <motion.div
-              variants={container}
-              initial="hidden"
-              animate="show"
-              className="space-y-4"
-            >
+            <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
               {requests.map((req) => (
                 <RequestCard key={req._id} req={req} />
               ))}
